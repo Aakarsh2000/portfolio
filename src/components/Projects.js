@@ -5,10 +5,6 @@ import config from '../data/config';
 
 const FILTERS = ['All', 'ML/AI', 'Fullstack'];
 
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
-};
 
 const cardVariants = {
   hidden: { opacity: 0, y: 30, scale: 0.97 },

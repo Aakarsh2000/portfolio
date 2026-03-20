@@ -20,7 +20,7 @@ function renderMarkdown(text) {
       return (
         <div key={i} className="flex gap-2 mt-1">
           <span className="text-primary mt-0.5 shrink-0">•</span>
-          <span>{parts.map((p, j) => typeof p === 'string' ? p.replace(/^[\*\-]\s/, '') : p)}</span>
+          <span>{parts.map((p, j) => typeof p === 'string' ? p.replace(/^[*-]\s/, '') : p)}</span>
         </div>
       );
     }
