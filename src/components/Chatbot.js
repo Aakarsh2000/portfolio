@@ -153,7 +153,6 @@ export default function Chatbot() {
   const [suggestions, setSuggestions] = useState([]);
   const [sessionHistory, setSessionHistory] = useState([]);
   const [, setApiError] = useState(null);
-  const [hasApiKey] = useState(!!process.env.REACT_APP_GEMINI_API_KEY);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -184,53 +183,22 @@ export default function Chatbot() {
     setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
 
-    // No API key — graceful fallback
-    if (!hasApiKey) {
-      setTimeout(() => {
-        setIsTyping(false);
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            text: "The Gemini API key isn't configured. Please set REACT_APP_GEMINI_API_KEY in your .env file to enable AI responses. In the meantime, feel free to explore the portfolio!",
-          },
-        ]);
-      }, 800);
-      return;
-    }
-
     try {
-      console.log('[Chatbot] API key present:', !!process.env.REACT_APP_GEMINI_API_KEY);
-      console.log('[Chatbot] Importing SDK...');
-      const { GoogleGenAI } = await import('@google/genai');
-      console.log('[Chatbot] SDK imported OK');
-
-      const ai = new GoogleGenAI({ apiKey: process.env.REACT_APP_GEMINI_API_KEY });
-      console.log('[Chatbot] Client initialised, using gemini-2.5-flash');
-
       const isFirstMessage = sessionHistory.length === 0;
       const messageToSend = isFirstMessage
         ? `${PERSONA_CONTEXT}\n\nNow answer this question: ${userText}`
         : userText;
 
-      console.log('[Chatbot] Session history length:', sessionHistory.length);
-      console.log('[Chatbot] Sending message (first?', isFirstMessage, ')');
-
-      // Build contents array from history + new message
-      const contents = [
-        ...sessionHistory,
-        { role: 'user', parts: [{ text: messageToSend }] },
-      ];
-
-      const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents,
-        config: { maxOutputTokens: 500, temperature: 0.7 },
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: messageToSend, history: sessionHistory }),
       });
 
-      console.log('[Chatbot] Raw result:', result);
-      const responseText = result.text;
-      console.log('[Chatbot] Response text:', responseText);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Server error');
+
+      const responseText = data.text;
 
       setSessionHistory((prev) => [
         ...prev,
@@ -242,22 +210,11 @@ export default function Chatbot() {
       setMessages((prev) => [...prev, { role: 'assistant', text: responseText }]);
       setSuggestions(getSuggestions(responseText));
     } catch (err) {
-      console.error('[Chatbot] ERROR name:', err.name);
-      console.error('[Chatbot] ERROR message:', err.message);
-      console.error('[Chatbot] ERROR stack:', err.stack);
-      console.error('[Chatbot] Full error object:', err);
+      console.error('[Chatbot]', err.message);
       setIsTyping(false);
-
-      // Show the real error in the chat bubble so you can see it without DevTools
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          text: `⚠️ Error: ${err.message || 'Unknown error'}`,
-        },
-      ]);
+      setMessages((prev) => [...prev, { role: 'assistant', text: `⚠️ ${err.message}` }]);
     }
-  }, [input, isTyping, hasApiKey, sessionHistory]);
+  }, [input, isTyping, sessionHistory]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -314,7 +271,7 @@ export default function Chatbot() {
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     <span className="text-emerald-400 text-xs">
-                      {hasApiKey ? 'Powered by Gemini' : 'Demo mode'}
+                      Powered by Gemini
                     </span>
                   </div>
                 </div>
@@ -341,14 +298,6 @@ export default function Chatbot() {
               </div>
             </div>
 
-            {/* API key warning */}
-            {!hasApiKey && (
-              <div className="px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20">
-                <p className="text-amber-400 text-xs">
-                  Add <code className="font-mono bg-amber-500/20 px-1 rounded">REACT_APP_GEMINI_API_KEY</code> to .env to enable AI responses.
-                </p>
-              </div>
-            )}
 
             {/* Messages */}
             <div
