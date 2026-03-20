@@ -1,7 +1,6 @@
-const { GoogleGenAI } = require('@google/genai');
+import { GoogleGenAI } from '@google/genai';
 
 export default async function handler(req, res) {
-  // CORS headers — allow requests from your Vercel domain
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -16,21 +15,18 @@ export default async function handler(req, res) {
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-
     const contents = [
       ...(history || []),
       { role: 'user', parts: [{ text: message }] },
     ];
-
     const result = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents,
       config: { maxOutputTokens: 500, temperature: 0.7 },
     });
-
     res.status(200).json({ text: result.text });
   } catch (err) {
-    console.error('[/api/chat] Error:', err.message);
+    console.error('[/api/chat]', err.message);
     res.status(500).json({ error: err.message });
   }
 }

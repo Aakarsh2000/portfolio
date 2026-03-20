@@ -1,7 +1,7 @@
 {
   "name": "portfolio",
   "version": "1.0.0",
-  "homepage": "https://Aakarsh2000.github.io/portfolio",
+  "homepage": "/",
   "dependencies": {
     "@google/genai": "^1.46.0",
     "framer-motion": "^11.0.0",
