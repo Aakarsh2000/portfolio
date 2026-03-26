@@ -63,6 +63,11 @@ function ProjectCard({ project, index }) {
               >
                 {project.category}
               </span>
+              {project.status === 'compiling' && (
+                <span className="compiling-badge">
+                  ▶ Compiling<span className="cursor">_</span>
+                </span>
+              )}
             </div>
             <h3 className="text-white font-bold text-base leading-tight group-hover:text-primary transition-colors">
               {project.title}

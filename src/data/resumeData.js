@@ -355,4 +355,30 @@ export const projects = [
     github: 'https://github.com/Aakarsh2000',
     highlights: ['RBAC system', 'Tetrahedron visualization', 'D3.js charts'],
   },
+  {
+    id: 8,
+    title: 'IPL Cricket Data Mining',
+    subtitle: 'Cricket Analysis & Win Intelligence Engine',
+    description:
+      'Cricket meets data intelligence. Built on 400,000+ ball-by-ball events — surfacing win probabilities, uncovering dominant player combinations through sparse interaction graphs, and mining phase-aware patterns across powerplay, middle, and death overs to reveal what actually shapes match outcomes.',
+    tags: ['Python', 'Data Mining', 'Graph Mining', 'Association Rules', 'Sequential Patterns', 'Anomaly Detection'],
+    category: 'ML/AI',
+    color: '#f97316',
+    github: 'https://github.com/Aakarsh2000/cric-analysis',
+    highlights: ['4.97% wicket rate', '92.4% sparse network', 'Death overs: 9.77 runs/over'],
+    status: 'compiling',
+  },
+  {
+    id: 9,
+    title: 'RedOracle',
+    subtitle: 'Autonomous AI Penetration Testing Platform',
+    description:
+      'What if a machine could think like a hacker? RedOracle pairs frontier LLM semantic reasoning with Semgrep static analysis to autonomously hunt vulnerabilities across codebases — scoring, contextualizing, and explaining exploits the way a human pentester would, but at scale.',
+    tags: ['Claude API', 'Semgrep', 'Python', 'Static Analysis', 'AI Security', 'LLM'],
+    category: 'ML/AI',
+    color: '#dc2626',
+    github: 'https://github.com/Aakarsh2000',
+    highlights: ['AI semantic vulnerability analysis', 'Contextual risk scoring', 'Automated exploit reports'],
+    status: 'compiling',
+  },
 ];

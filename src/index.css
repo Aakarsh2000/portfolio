@@ -2,6 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Compiling Badge ───────────────────────────────────── */
+@keyframes compilingScan {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes compilingGlow {
+  0%, 100% { box-shadow: 0 0 6px rgba(99,102,241,0.3), 0 0 12px rgba(139,92,246,0.15); }
+  50%       { box-shadow: 0 0 10px rgba(99,102,241,0.6), 0 0 20px rgba(139,92,246,0.3); }
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.compiling-badge {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #1e1b4b, #1e1034, #0f172a);
+  background-size: 200% 200%;
+  animation: compilingScan 3s ease infinite, compilingGlow 2s ease-in-out infinite;
+  border: 1px solid rgba(139,92,246,0.4);
+  color: #a78bfa;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.compiling-badge .cursor {
+  animation: cursorBlink 1s step-end infinite;
+  color: #7c3aed;
+}
+
 /* ─── Custom Scrollbar ─────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
