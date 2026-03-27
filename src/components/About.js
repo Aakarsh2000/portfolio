@@ -61,25 +61,67 @@ const HIGHLIGHTS = [
 
 export default function About() {
   return (
-    <div className="relative py-28 px-6">
+    <div className="relative py-20 px-6" style={{ background: '#0d1117' }}>
       <div className="max-w-6xl mx-auto">
-        {/* Section header */}
         <motion.div
           variants={fadeUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
-          className="text-center mb-16"
+          className="rounded-2xl overflow-hidden"
+          style={{
+            border: '1px solid rgba(36,150,237,0.3)',
+            background: '#1d2d3e',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+          }}
         >
-          <span className="section-tag">About Me</span>
-          <h2 className="text-4xl md:text-5xl font-bold text-white mt-3 mb-4">
-            Who I{' '}
-            <span className="gradient-text">Am</span>
-          </h2>
-          <p className="max-w-xl mx-auto text-slate-400 text-lg">
-            Engineer, researcher, and builder — bridging the gap between theory and production systems.
-          </p>
-        </motion.div>
+          {/* Docker Desktop title bar */}
+          <div className="flex items-center gap-3 px-4 py-2.5 border-b" style={{ background: '#1a2a3a', borderColor: 'rgba(36,150,237,0.15)' }}>
+            <div className="flex gap-1.5 shrink-0">
+              <div className="w-3 h-3 rounded-full" style={{ background: '#ff5f56' }} />
+              <div className="w-3 h-3 rounded-full" style={{ background: '#ffbd2e' }} />
+              <div className="w-3 h-3 rounded-full" style={{ background: '#27c93f' }} />
+            </div>
+            {/* Docker whale icon */}
+            <svg width="20" height="20" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M28 19h4v4h-4v-4zm-6 0h4v4h-4v-4zm-6 0h4v4h-4v-4zm6-6h4v4h-4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zm-12-6h4v4h-4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z" fill="#2496ed"/>
+              <path d="M46.6 22.1c-.9-.6-2.9-.8-4.5-.5-.2-1.6-1.1-3-2.7-4.1l-.9-.6-.6.9c-.8 1.2-1.1 3.2-.9 4.7-.4-.2-.9-.5-1.3-.6-1-.4-2.1-.5-3.1-.5H4c-.3 3.3.5 7.4 2.7 10.3 2.5 3.2 6.3 4.8 11.2 4.8 10.7 0 18.6-4.9 22.3-13.8 1.5.1 4.6.1 6.2-3.1.1-.1.4-.8.5-1.1l-.3-.4z" fill="#2496ed"/>
+            </svg>
+            <span style={{ color: '#2496ed', fontSize: 13, fontWeight: 600 }}>Docker Desktop</span>
+            <span style={{ color: '#4b6a8a', fontSize: 13 }}>— portfolio</span>
+          </div>
+
+          {/* Container status row */}
+          <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 border-b" style={{ background: '#162436', borderColor: 'rgba(36,150,237,0.15)' }}>
+            <code className="font-mono text-xs" style={{ color: '#93c5fd' }}>
+              docker run --name sai-aakarsh -p 3000:3000 -d portfolio:latest
+            </code>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <span className="text-xs px-2 py-0.5 rounded font-mono font-semibold" style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)' }}>
+                ● RUNNING
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.08)' }}>
+                Up 3+ years
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded font-mono" style={{ background: 'rgba(36,150,237,0.1)', color: '#60a5fa', border: '1px solid rgba(36,150,237,0.25)' }}>
+                0.0.0.0:3000-&gt;3000/tcp
+              </span>
+            </div>
+          </div>
+
+          {/* Section content */}
+          <div className="p-8 md:p-10">
+            {/* Section header */}
+            <div className="text-center mb-14">
+              <span className="section-tag">About Me</span>
+              <h2 className="text-4xl md:text-5xl font-bold text-white mt-3 mb-4">
+                Who I{' '}
+                <span className="gradient-text">Am</span>
+              </h2>
+              <p className="max-w-xl mx-auto text-slate-400 text-lg">
+                Engineer, researcher, and builder — bridging the gap between theory and production systems.
+              </p>
+            </div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left — bio */}
@@ -223,65 +265,132 @@ export default function About() {
               </motion.div>
             ))}
 
-            {/* Code snippet card */}
+            {/* VS Code IDE card */}
             <motion.div
               variants={fadeUp}
               custom={0.6}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: '-60px' }}
-              className="sm:col-span-2 code-block"
+              className="sm:col-span-2 rounded-xl overflow-hidden"
+              style={{
+                background: '#1e1e2e',
+                border: '1px solid rgba(255,255,255,0.06)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              }}
             >
-              <div className="flex items-center gap-2 mb-3 opacity-60">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="ml-2 text-slate-600 text-xs">about.py</span>
+              {/* Title bar */}
+              <div
+                className="flex items-center border-b"
+                style={{ background: '#181825', borderColor: 'rgba(255,255,255,0.05)' }}
+              >
+                <div className="flex gap-1.5 px-4 py-2.5 shrink-0">
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#ff5f56' }} />
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#ffbd2e' }} />
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#27c93f' }} />
+                </div>
+                {/* File tabs */}
+                <div className="flex text-xs font-mono overflow-hidden">
+                  <div
+                    className="px-4 py-2 text-slate-300 border-r"
+                    style={{
+                      background: '#1e1e2e',
+                      borderBottom: '2px solid #6366f1',
+                      borderRightColor: 'rgba(255,255,255,0.05)',
+                    }}
+                  >
+                    about.py
+                  </div>
+                  <div
+                    className="px-4 py-2 text-slate-600"
+                    style={{ background: '#181825' }}
+                  >
+                    profile.json
+                  </div>
+                </div>
               </div>
-              <div className="text-sm space-y-1">
-                <p>
-                  <span className="text-purple-400">class</span>{' '}
-                  <span className="text-cyan-300">{config.name.className}</span>
-                  <span className="text-slate-400">:</span>
-                </p>
-                <p className="pl-4">
-                  <span className="text-purple-400">def</span>{' '}
-                  <span className="text-blue-300">__init__</span>
-                  <span className="text-slate-400">(self):</span>
-                </p>
-                <p className="pl-8">
-                  <span className="text-slate-400">self.</span>
-                  <span className="text-yellow-300">role</span>
-                  <span className="text-slate-400"> = </span>
-                  <span className="text-green-300">"Backend | Fullstack | ML/AI"</span>
-                </p>
-                <p className="pl-8">
-                  <span className="text-slate-400">self.</span>
-                  <span className="text-yellow-300">school</span>
-                  <span className="text-slate-400"> = </span>
-                  <span className="text-green-300">"{config.currentSchool}"</span>
-                </p>
-                <p className="pl-8">
-                  <span className="text-slate-400">self.</span>
-                  <span className="text-yellow-300">open_to</span>
-                  <span className="text-slate-400"> = </span>
-                  <span className="text-green-300">"Full-time ({config.graduationYear})"</span>
-                </p>
-                <p className="pl-8">
-                  <span className="text-slate-400">self.</span>
-                  <span className="text-yellow-300">passion</span>
-                  <span className="text-slate-400"> = [</span>
-                  <span className="text-green-300">"systems"</span>
-                  <span className="text-slate-400">, </span>
-                  <span className="text-green-300">"ML"</span>
-                  <span className="text-slate-400">, </span>
-                  <span className="text-green-300">"scalability"</span>
-                  <span className="text-slate-400">]</span>
-                </p>
+
+              {/* Editor body */}
+              <div className="flex text-sm font-mono" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>
+                {/* Line numbers */}
+                <div
+                  className="flex flex-col items-end py-4 px-3 select-none text-xs leading-6 border-r"
+                  style={{ color: '#3d3d5c', borderColor: 'rgba(255,255,255,0.04)', minWidth: '40px', background: '#1e1e2e' }}
+                >
+                  {[1,2,3,4,5,6,7,8].map(n => <span key={n}>{n}</span>)}
+                </div>
+
+                {/* Code */}
+                <div className="p-4 text-sm leading-6 flex-1 overflow-x-auto">
+                  <p>
+                    <span style={{ color: '#cba6f7' }}>class</span>{' '}
+                    <span style={{ color: '#89dceb' }}>{config.name.className}</span>
+                    <span style={{ color: '#6c7086' }}>:</span>
+                  </p>
+                  <p className="pl-4">
+                    <span style={{ color: '#cba6f7' }}>def</span>{' '}
+                    <span style={{ color: '#89b4fa' }}>__init__</span>
+                    <span style={{ color: '#6c7086' }}>(self):</span>
+                  </p>
+                  <p className="pl-8">
+                    <span style={{ color: '#6c7086' }}>self.</span>
+                    <span style={{ color: '#f9e2af' }}>role</span>
+                    <span style={{ color: '#6c7086' }}> = </span>
+                    <span style={{ color: '#a6e3a1' }}>"Backend | Fullstack | ML/AI"</span>
+                  </p>
+                  <p className="pl-8">
+                    <span style={{ color: '#6c7086' }}>self.</span>
+                    <span style={{ color: '#f9e2af' }}>school</span>
+                    <span style={{ color: '#6c7086' }}> = </span>
+                    <span style={{ color: '#a6e3a1' }}>"{config.currentSchool}"</span>
+                  </p>
+                  <p className="pl-8">
+                    <span style={{ color: '#6c7086' }}>self.</span>
+                    <span style={{ color: '#f9e2af' }}>open_to</span>
+                    <span style={{ color: '#6c7086' }}> = </span>
+                    <span style={{ color: '#a6e3a1' }}>"Full-time ({config.graduationYear})"</span>
+                  </p>
+                  <p className="pl-8">
+                    <span style={{ color: '#6c7086' }}>self.</span>
+                    <span style={{ color: '#f9e2af' }}>passion</span>
+                    <span style={{ color: '#6c7086' }}> = [</span>
+                    <span style={{ color: '#a6e3a1' }}>"systems"</span>
+                    <span style={{ color: '#6c7086' }}>, </span>
+                    <span style={{ color: '#a6e3a1' }}>"ML"</span>
+                    <span style={{ color: '#6c7086' }}>, </span>
+                    <span style={{ color: '#a6e3a1' }}>"scalability"</span>
+                    <span style={{ color: '#6c7086' }}>]</span>
+                  </p>
+                  <p className="h-6" />
+                  <p>
+                    <span style={{ color: '#6c7086' }}>sai = </span>
+                    <span style={{ color: '#89dceb' }}>{config.name.className}</span>
+                    <span style={{ color: '#6c7086' }}>()</span>
+                    <span
+                      className="inline-block w-[7px] h-[14px] ml-1 align-middle"
+                      style={{ background: '#6366f1', animation: 'cursorBlink 1s step-end infinite' }}
+                    />
+                  </p>
+                </div>
+              </div>
+
+              {/* Status bar */}
+              <div
+                className="flex items-center gap-4 px-4 py-1 text-xs font-mono"
+                style={{ background: '#6366f1', color: 'rgba(255,255,255,0.85)' }}
+              >
+                <span>Python 3.11</span>
+                <span className="opacity-60">·</span>
+                <span>UTF-8</span>
+                <span className="opacity-60">·</span>
+                <span>Ln 8, Col 1</span>
+                <span className="ml-auto opacity-70">about.py</span>
               </div>
             </motion.div>
           </div>
         </div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

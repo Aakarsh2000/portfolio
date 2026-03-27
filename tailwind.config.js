@@ -4,10 +4,10 @@ module.exports = {
     extend: {
       colors: {
         primary: '#6366f1',
-        secondary: '#8b5cf6',
-        accent: '#06b6d4',
-        dark: '#0a0a0f',
-        'dark-card': '#111827',
+        secondary: '#818cf8',
+        accent: '#a5b4fc',
+        dark: '#0d0f1a',
+        'dark-card': '#0f1118',
       },
       animation: {
         'float': 'float 6s ease-in-out infinite',

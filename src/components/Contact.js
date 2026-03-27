@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import config from '../data/config';
 
 const SOCIAL_LINKS = [
@@ -39,304 +39,470 @@ const SOCIAL_LINKS = [
   },
 ];
 
-function InputField({ label, id, type = 'text', placeholder, value, onChange, error, as = 'input', rows }) {
-  const baseClass =
-    'w-full bg-dark-card/60 border rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 text-sm transition-all duration-200 focus:outline-none resize-none';
-  const borderClass = error
-    ? 'border-red-500/50 focus:border-red-500'
-    : 'border-white/10 focus:border-primary/60 focus:bg-dark-card focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]';
+const SSH_LINES = [
+  { text: '➜  ssh sai@connect.dev -p 443', color: '#e2e8f0', delay: 0 },
+  { text: "The authenticity of host 'connect.dev' can't be established.", color: '#6b7280', delay: 600 },
+  { text: 'RSA key fingerprint is SHA256:Aakarsh2000', color: '#6b7280', delay: 1000 },
+  { text: 'Are you sure you want to continue connecting? (yes/no) yes', color: '#6b7280', delay: 1400 },
+  { text: '✓ Connection established.', color: '#6ee7b7', delay: 2000 },
+];
+
+// steps 0-2 = prompts, 3 = confirm, 4 = sending, 5 = done
+const PROMPTS = [
+  {
+    key: 'name',
+    label: 'name',
+    prompt: 'Enter your name:',
+    validate: v => v.trim().length > 0 ? null : 'Name cannot be empty',
+  },
+  {
+    key: 'email',
+    label: 'email',
+    prompt: 'Enter your email address:',
+    validate: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? null : 'Invalid email — try again',
+  },
+  {
+    key: 'message',
+    label: 'message',
+    prompt: 'Enter your message:',
+    validate: v => v.trim().length >= 5 ? null : 'Message too short — try again',
+  },
+];
+
+const SEND_LINES = [
+  { text: '$ POST /api/contact HTTP/1.1', color: '#e2e8f0', delay: 0 },
+  { text: '> Content-Type: application/json', color: '#6b7280', delay: 220 },
+  { text: '> Authorization: Bearer ***', color: '#6b7280', delay: 440 },
+  { text: '', delay: 600 },
+  { text: 'Encrypting payload...', color: '#f9a825', delay: 760 },
+  { text: 'Routing to sai@connect.dev...', color: '#f9a825', delay: 1080 },
+  { text: 'HTTP/1.1 200 OK', color: '#27c93f', delay: 1480 },
+  { text: '{"status":"delivered","code":200}', color: '#6ee7b7', delay: 1700 },
+  { text: '', delay: 1880 },
+  { text: '✓ Message delivered successfully.', color: '#27c93f', delay: 2060 },
+];
+
+function SshAnimation({ onReady }) {
+  const [visibleLines, setVisibleLines] = useState([]);
+  useEffect(() => {
+    const ids = [];
+    SSH_LINES.forEach(({ text, color, delay }) => {
+      ids.push(setTimeout(() => setVisibleLines(p => [...p, { text, color }]), delay));
+    });
+    ids.push(setTimeout(onReady, 2400));
+    return () => ids.forEach(clearTimeout);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-400 mb-1.5">
-        {label}
-      </label>
-      {as === 'textarea' ? (
-        <textarea
-          id={id}
-          rows={rows || 5}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          className={`${baseClass} ${borderClass}`}
-        />
-      ) : (
-        <input
-          id={id}
-          type={type}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          className={`${baseClass} ${borderClass}`}
-        />
-      )}
-      {error && <p className="mt-1 text-red-400 text-xs">{error}</p>}
-    </div>
+    <>
+      {visibleLines.map((line, i) => (
+        <motion.div key={i} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.18 }} className="font-mono text-xs leading-5" style={{ color: line.color }}>
+          {line.text}
+        </motion.div>
+      ))}
+    </>
+  );
+}
+
+function SendAnimation({ onDone }) {
+  const [lines, setLines] = useState([]);
+  useEffect(() => {
+    const ids = [];
+    SEND_LINES.forEach(({ text, color, delay }, i) => {
+      ids.push(setTimeout(() => {
+        setLines(p => [...p, { text, color }]);
+        if (i === SEND_LINES.length - 1) ids.push(setTimeout(onDone, 800));
+      }, delay));
+    });
+    return () => ids.forEach(clearTimeout);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <>
+      {lines.map((line, i) => (
+        <motion.div key={i} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.15 }} className="font-mono text-xs leading-5"
+          style={{ color: line.color || 'transparent', minHeight: '1.25rem' }}>
+          {line.text || '\u00a0'}
+        </motion.div>
+      ))}
+    </>
   );
 }
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
-  const [errors, setErrors] = useState({});
-  const [status, setStatus] = useState(null); // 'sending' | 'sent' | 'error'
+  const sectionRef = useRef(null);
+  const inputRef   = useRef(null);
+  const bottomRef  = useRef(null);
+  const isInView   = useInView(sectionRef, { once: true, amount: 0.35 });
 
-  const validate = () => {
-    const e = {};
-    if (!form.name.trim()) e.name = 'Name is required';
-    if (!form.email.trim()) e.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email';
-    if (!form.message.trim()) e.message = 'Message is required';
-    else if (form.message.trim().length < 10) e.message = 'Message is too short';
-    return e;
+  const [connected,    setConnected]    = useState(false);
+  const [step,         setStep]         = useState(0); // 0-2 prompts, 3 confirm, 4 sending, 5 done
+  const [history,      setHistory]      = useState([]);
+  const [currentInput, setCurrentInput] = useState('');
+  const [inputError,   setInputError]   = useState('');
+  const [form,         setForm]         = useState({ name: '', email: '', message: '' });
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [history, step]);
+
+  useEffect(() => {
+    if (connected && step < 4) {
+      setTimeout(() => inputRef.current?.focus(), 80);
+    }
+  }, [connected, step]);
+
+  const addLine = (text, color = '#e2e8f0') =>
+    setHistory(prev => [...prev, { text, color, id: Date.now() + Math.random() }]);
+
+  const handleConnected = () => {
+    setConnected(true);
+    setTimeout(() => {
+      addLine('');
+      addLine('Welcome! Fill in the details below to send me a message.', '#a5b4fc');
+      addLine("Type your answer and press Enter ↵ to proceed.", '#6b7280');
+      addLine('');
+    }, 200);
   };
 
-  const handleSubmit = async (e) => {
+  const handleKeyDown = async (e) => {
+    if (e.key !== 'Enter') return;
     e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-    setErrors({});
-    setStatus('sending');
 
-    const endpoint = process.env.REACT_APP_FORMSPREE_ENDPOINT;
-    if (!endpoint) {
-      // Fallback to mailto if endpoint not configured
-      const subject = encodeURIComponent(`Portfolio Contact from ${form.name}`);
-      const body = encodeURIComponent(`Hi Sai,\n\n${form.message}\n\nFrom: ${form.name}\nEmail: ${form.email}`);
-      window.location.href = `mailto:${config.email}?subject=${subject}&body=${body}`;
-      setTimeout(() => { setStatus('sent'); setForm({ name: '', email: '', message: '' }); }, 800);
+    // ── Confirm step ──────────────────────────────────
+    if (step === 3) {
+      const ans = currentInput.trim().toLowerCase();
+      if (ans !== 'yes' && ans !== 'no') {
+        setInputError("Type 'yes' to send or 'no' to start over");
+        return;
+      }
+      setInputError('');
+      addLine(`sai@connect.dev:~$ Send message? (yes/no)`, '#27c93f');
+      addLine(`  ${currentInput.trim()}`, '#e2e8f0');
+      addLine('');
+      setCurrentInput('');
+
+      if (ans === 'no') {
+        addLine('Restarting... Type your details again.', '#f9a825');
+        addLine('');
+        setForm({ name: '', email: '', message: '' });
+        setStep(0);
+        return;
+      }
+      // yes → send
+      setStep(4);
+      const endpoint = process.env.REACT_APP_FORMSPREE_ENDPOINT;
+      if (endpoint) {
+        try {
+          await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify(form),
+          });
+        } catch { /* fall through */ }
+      }
       return;
     }
 
-    try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ name: form.name, email: form.email, message: form.message }),
-      });
-      if (res.ok) {
-        setStatus('sent');
-        setForm({ name: '', email: '', message: '' });
-      } else {
-        setStatus('error');
-      }
-    } catch {
-      setStatus('error');
+    // ── Normal prompt step ────────────────────────────
+    const currentPrompt = PROMPTS[step];
+    const err = currentPrompt.validate(currentInput);
+
+    if (err) {
+      setInputError(err);
+      addLine(`  ✗ ${err}`, '#f87171');
+      return;
+    }
+
+    setInputError('');
+    const val = currentInput.trim();
+
+    // echo to history
+    addLine(`sai@connect.dev:~$ ${currentPrompt.prompt}`, '#27c93f');
+    addLine(`  ${val}`, '#e2e8f0');
+    addLine('');
+
+    const newForm = { ...form, [currentPrompt.key]: val };
+    setForm(newForm);
+    setCurrentInput('');
+
+    if (step < PROMPTS.length - 1) {
+      setStep(step + 1);
+    } else {
+      // all 3 done → show summary + confirm
+      setTimeout(() => {
+        addLine('─── Summary ──────────────────────────────', '#1e3a5f');
+        addLine(`  Name     :  ${newForm.name}`,    '#a5b4fc');
+        addLine(`  Email    :  ${newForm.email}`,   '#a5b4fc');
+        addLine(`  Message  :  ${newForm.message}`, '#a5b4fc');
+        addLine('──────────────────────────────────────────', '#1e3a5f');
+        addLine('');
+      }, 100);
+      setStep(3);
     }
   };
 
-  const set = (field) => (e) => {
-    setForm((f) => ({ ...f, [field]: e.target.value }));
-    if (errors[field]) setErrors((er) => ({ ...er, [field]: undefined }));
+  const handleReset = () => {
+    setStep(0);
+    setHistory([]);
+    setCurrentInput('');
+    setInputError('');
+    setForm({ name: '', email: '', message: '' });
+    setTimeout(() => {
+      addLine('');
+      addLine('Welcome back! Fill in your details again.', '#a5b4fc');
+      addLine('');
+    }, 100);
   };
 
+  const isPromptStep = step < 3;
+  const isConfirmStep = step === 3;
+  const prompt = isPromptStep ? PROMPTS[step] : null;
+
   return (
-    <div className="relative py-28 px-6">
+    <div ref={sectionRef} className="relative py-20 px-6" style={{ background: '#0d1117' }}>
       <div className="max-w-5xl mx-auto">
-        {/* Section header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.6 }}
+          className="rounded-2xl overflow-hidden"
+          style={{
+            border: '1px solid rgba(16,185,129,0.2)',
+            background: 'rgba(4,10,8,0.98)',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+          }}
         >
-          <span className="section-tag">Contact</span>
-          <h2 className="text-4xl md:text-5xl font-bold text-white mt-3 mb-4">
-            Let's{' '}
-            <span className="gradient-text">Connect</span>
-          </h2>
-          <p className="max-w-xl mx-auto text-slate-400 text-lg">
-            Open to full-time roles, collaborations, and interesting problems. Drop me a message!
-          </p>
-        </motion.div>
+          {/* SSH terminal title bar */}
+          <div className="flex items-center gap-3 px-4 py-2.5 border-b"
+            style={{ background: 'rgba(0,0,0,0.5)', borderColor: 'rgba(16,185,129,0.15)' }}>
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full" style={{ background: '#ff5f56' }} />
+              <div className="w-3 h-3 rounded-full" style={{ background: '#ffbd2e' }} />
+              <div className="w-3 h-3 rounded-full" style={{ background: '#27c93f' }} />
+            </div>
+            <span className="font-mono text-xs" style={{ color: '#374151' }}>ssh — sai@connect.dev</span>
+            <AnimatePresence>
+              {connected && (
+                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                  className="ml-auto flex items-center gap-1.5 font-mono text-xs" style={{ color: '#10b981' }}>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                  Connected
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
-        <div className="grid lg:grid-cols-5 gap-10">
-          {/* Left — social + info */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.7 }}
-            className="lg:col-span-2 space-y-6"
-          >
-            {/* Availability card */}
-            <div className="card-dark p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-emerald-400 font-medium text-sm">Available for opportunities</span>
-              </div>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                I'm actively seeking full-time software engineering, backend, or ML/AI roles starting{' '}
-                <span className="text-white font-medium">May 2026</span> after graduation from Texas
-                A&M.
+          <div className="p-8 md:p-10">
+            {/* Header */}
+            <div className="text-center mb-10">
+              <span className="section-tag">Contact</span>
+              <h2 className="text-4xl md:text-5xl font-bold text-white mt-3 mb-4">
+                Let's <span className="gradient-text">Connect</span>
+              </h2>
+              <p className="max-w-xl mx-auto text-slate-400 text-lg">
+                Open to full-time roles, collaborations, and interesting problems.
               </p>
             </div>
 
-            {/* Social links */}
-            <div className="card-dark p-6">
-              <h3 className="text-sm font-mono text-slate-500 uppercase tracking-widest mb-4">
-                Find Me On
-              </h3>
-              <div className="space-y-3">
-                {SOCIAL_LINKS.map((link) => (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    target={link.name !== 'Email' ? '_blank' : undefined}
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200 group"
-                  >
-                    <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-105"
-                      style={{
-                        background: `${link.color}15`,
-                        border: `1px solid ${link.color}25`,
-                        color: link.color,
-                      }}
-                    >
-                      {link.icon}
-                    </div>
-                    <div>
-                      <div className="text-white text-sm font-medium">{link.name}</div>
-                      <div className="text-slate-500 text-xs">{link.label}</div>
-                    </div>
-                    <svg
-                      className="w-3.5 h-3.5 ml-auto text-slate-600 group-hover:text-primary group-hover:translate-x-0.5 transition-all"
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="card-dark p-5 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary/10 border border-primary/20 text-primary shrink-0">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div>
-                <div className="text-white text-sm font-medium">{config.location}</div>
-                <div className="text-slate-500 text-xs">{config.currentSchool}</div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Right — contact form */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            className="lg:col-span-3"
-          >
-            <div className="card-dark p-8">
-              {status === 'sent' ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center justify-center h-72 text-center"
-                >
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mb-5">
-                    <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+            <div className="grid lg:grid-cols-5 gap-8">
+              {/* Left — social */}
+              <div className="lg:col-span-2 space-y-5">
+                <div className="card-dark p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-emerald-400 font-medium text-sm">Available for opportunities</span>
                   </div>
-                  <h3 className="text-white text-xl font-bold mb-2">Message Sent!</h3>
-                  <p className="text-slate-400 text-sm mb-6">Thanks! I'll get back to you soon.</p>
-                  <button onClick={() => setStatus(null)} className="text-sm text-primary hover:text-secondary transition-colors">
-                    Send another message
-                  </button>
-                </motion.div>
-              ) : status === 'error' ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center justify-center h-72 text-center"
-                >
-                  <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center mb-5">
-                    <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </div>
-                  <h3 className="text-white text-xl font-bold mb-2">Something went wrong</h3>
-                  <p className="text-slate-400 text-sm mb-6">Please try emailing directly at <a href={`mailto:${config.email}`} className="text-primary">{config.email}</a></p>
-                  <button onClick={() => setStatus(null)} className="text-sm text-primary hover:text-secondary transition-colors">
-                    Try again
-                  </button>
-                </motion.div>
-              ) : (
-                <form onSubmit={handleSubmit} noValidate className="space-y-5">
-                  <div className="grid sm:grid-cols-2 gap-5">
-                    <InputField
-                      label="Your Name"
-                      id="name"
-                      placeholder="John Doe"
-                      value={form.name}
-                      onChange={set('name')}
-                      error={errors.name}
-                    />
-                    <InputField
-                      label="Email Address"
-                      id="email"
-                      type="email"
-                      placeholder="john@example.com"
-                      value={form.email}
-                      onChange={set('email')}
-                      error={errors.email}
-                    />
-                  </div>
-                  <InputField
-                    label="Message"
-                    id="message"
-                    as="textarea"
-                    rows={6}
-                    placeholder="Hi Sai, I'd love to chat about..."
-                    value={form.message}
-                    onChange={set('message')}
-                    error={errors.message}
-                  />
-
-                  <motion.button
-                    type="submit"
-                    disabled={status === 'sending'}
-                    whileHover={{ scale: 1.01, y: -1 }}
-                    whileTap={{ scale: 0.99 }}
-                    className="w-full py-3.5 rounded-xl font-semibold text-white text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{
-                      background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                      boxShadow: '0 4px 20px rgba(99,102,241,0.3)',
-                    }}
-                  >
-                    {status === 'sending' ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Opening email client...
-                      </>
-                    ) : (
-                      <>
-                        Send Message
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                        </svg>
-                      </>
-                    )}
-                  </motion.button>
-
-                  <p className="text-center text-slate-600 text-xs">
-                    This will open your email client with the message pre-filled.
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Actively seeking full-time roles starting{' '}
+                    <span className="text-white font-medium">May 2026</span> after graduating from Texas A&M.
                   </p>
-                </form>
-              )}
+                </div>
+
+                <div className="card-dark p-5">
+                  <h3 className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-4">Find Me On</h3>
+                  <div className="space-y-3">
+                    {SOCIAL_LINKS.map((link) => (
+                      <a key={link.name} href={link.href}
+                        target={link.name !== 'Email' ? '_blank' : undefined}
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 rounded-xl border border-white/5 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200 group"
+                      >
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-all group-hover:scale-105"
+                          style={{ background: `${link.color}15`, border: `1px solid ${link.color}25`, color: link.color }}>
+                          {link.icon}
+                        </div>
+                        <div>
+                          <div className="text-white text-sm font-medium">{link.name}</div>
+                          <div className="text-slate-500 text-xs">{link.label}</div>
+                        </div>
+                        <svg className="w-3 h-3 ml-auto text-slate-600 group-hover:text-primary transition-colors"
+                          fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="card-dark p-4 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary/10 border border-primary/20 text-primary shrink-0">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-white text-sm font-medium">{config.location}</div>
+                    <div className="text-slate-500 text-xs">{config.currentSchool}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right — interactive terminal */}
+              <div className="lg:col-span-3">
+                {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+                <div
+                  className="rounded-xl overflow-hidden flex flex-col"
+                  style={{
+                    border: '1px solid rgba(16,185,129,0.15)',
+                    background: '#020d06',
+                    minHeight: 360,
+                    maxHeight: 520,
+                  }}
+                  onClick={() => inputRef.current?.focus()}
+                >
+                  {/* Mini title bar */}
+                  <div className="flex items-center gap-2 px-4 py-2 shrink-0"
+                    style={{ background: 'rgba(0,0,0,0.6)', borderBottom: '1px solid rgba(16,185,129,0.1)' }}>
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 rounded-full" style={{ background: '#ff5f56' }} />
+                      <div className="w-2 h-2 rounded-full" style={{ background: '#ffbd2e' }} />
+                      <div className="w-2 h-2 rounded-full" style={{ background: '#27c93f' }} />
+                    </div>
+                    <span className="font-mono text-xs ml-1" style={{ color: '#374151' }}>terminal</span>
+                  </div>
+
+                  {/* Scrollable body */}
+                  <div className="flex-1 overflow-y-auto px-4 py-3 space-y-0.5" style={{ scrollbarWidth: 'none' }}>
+                    {isInView && <SshAnimation onReady={handleConnected} />}
+
+                    {history.map((line) => (
+                      <motion.div key={line.id} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="font-mono text-xs leading-5 whitespace-pre-wrap break-all"
+                        style={{ color: line.color }}>
+                        {line.text || '\u00a0'}
+                      </motion.div>
+                    ))}
+
+                    {/* Send animation */}
+                    {step === 4 && <SendAnimation onDone={() => setStep(5)} />}
+
+                    {/* Done */}
+                    {step === 5 && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-1 pt-1">
+                        <div className="font-mono text-xs" style={{ color: '#6b7280' }}>
+                          sai@connect.dev:~${'  '}
+                          <button onClick={handleReset} className="underline hover:text-emerald-400 transition-colors">
+                            Send another message
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Active input — normal prompts */}
+                    {connected && isPromptStep && (
+                      <motion.div key={`prompt-${step}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <div className="font-mono text-xs leading-5" style={{ color: '#27c93f' }}>
+                          sai@connect.dev:~$ {prompt.prompt}
+                        </div>
+                        <div className="flex items-center font-mono text-xs leading-5 mt-0.5">
+                          <span style={{ color: '#a5b4fc' }}>{'> '}</span>
+                          <div className="relative flex-1 ml-1">
+                            <span style={{ color: '#e2e8f0' }}>{currentInput}</span>
+                            <span className="inline-block w-[7px] h-[13px] align-middle ml-px"
+                              style={{ background: '#10b981', animation: 'cursorBlink 0.8s step-end infinite', verticalAlign: 'middle' }} />
+                            <input ref={inputRef}
+                              type={prompt.key === 'email' ? 'email' : 'text'}
+                              value={currentInput}
+                              onChange={e => { setCurrentInput(e.target.value); setInputError(''); }}
+                              onKeyDown={handleKeyDown}
+                              className="absolute inset-0 opacity-0 w-full cursor-text"
+                              autoComplete="off" spellCheck={false} />
+                          </div>
+                        </div>
+                        {inputError && (
+                          <div className="font-mono text-xs mt-0.5 ml-2" style={{ color: '#f87171' }}>✗ {inputError}</div>
+                        )}
+                      </motion.div>
+                    )}
+
+                    {/* Confirm prompt */}
+                    {connected && isConfirmStep && (
+                      <motion.div key="confirm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <div className="font-mono text-xs leading-5" style={{ color: '#27c93f' }}>
+                          sai@connect.dev:~$ Send message? (yes/no)
+                        </div>
+                        <div className="flex items-center font-mono text-xs leading-5 mt-0.5">
+                          <span style={{ color: '#a5b4fc' }}>{'> '}</span>
+                          <div className="relative flex-1 ml-1">
+                            <span style={{ color: '#e2e8f0' }}>{currentInput}</span>
+                            <span className="inline-block w-[7px] h-[13px] align-middle ml-px"
+                              style={{ background: '#10b981', animation: 'cursorBlink 0.8s step-end infinite', verticalAlign: 'middle' }} />
+                            <input ref={inputRef} type="text" value={currentInput}
+                              onChange={e => { setCurrentInput(e.target.value); setInputError(''); }}
+                              onKeyDown={handleKeyDown}
+                              className="absolute inset-0 opacity-0 w-full cursor-text"
+                              autoComplete="off" spellCheck={false} />
+                          </div>
+                        </div>
+                        {inputError && (
+                          <div className="font-mono text-xs mt-0.5 ml-2" style={{ color: '#f87171' }}>✗ {inputError}</div>
+                        )}
+                      </motion.div>
+                    )}
+
+                    <div ref={bottomRef} />
+                  </div>
+
+                  {/* Progress indicator bar */}
+                  {connected && step < 4 && (
+                    <div className="px-4 py-2 flex items-center gap-2 shrink-0"
+                      style={{ background: 'rgba(0,0,0,0.4)', borderTop: '1px solid rgba(16,185,129,0.08)' }}>
+                      {[...PROMPTS, { key: 'confirm', label: 'confirm' }].map((p, i) => {
+                        const done  = i < step;
+                        const active = i === step && step < 4;
+                        return (
+                          <div key={p.key} className="flex items-center gap-1.5">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-mono"
+                              style={{
+                                background: done ? 'rgba(16,185,129,0.2)' : active ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.04)',
+                                border: done ? '1px solid #10b981' : active ? '1px solid rgba(16,185,129,0.5)' : '1px solid rgba(255,255,255,0.07)',
+                                color: done ? '#10b981' : active ? '#6ee7b7' : '#374151',
+                              }}>
+                              {done ? '✓' : i + 1}
+                            </div>
+                            <span className="text-xs font-mono hidden sm:inline"
+                              style={{ color: active ? '#6ee7b7' : done ? '#10b981' : '#374151' }}>
+                              {p.label}
+                            </span>
+                            {i < 3 && <span style={{ color: '#1e3a2f' }} className="ml-1">›</span>}
+                          </div>
+                        );
+                      })}
+                      <span className="ml-auto font-mono text-xs" style={{ color: '#1e3a2f' }}>Press Enter ↵</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

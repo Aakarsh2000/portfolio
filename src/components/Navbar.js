@@ -130,11 +130,11 @@ export default function Navbar() {
               </svg>
               GitHub
             </a>
-            <a
-              href={`mailto:${config.email}`}
+            <button
+              onClick={() => scrollTo('contact')}
               className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all duration-200"
               style={{
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 4px 20px rgba(99,102,241,0.4)';
@@ -146,7 +146,7 @@ export default function Navbar() {
               }}
             >
               Hire Me
-            </a>
+            </button>
           </div>
 
           {/* Mobile hamburger */}
@@ -204,13 +204,13 @@ export default function Navbar() {
                 >
                   GitHub
                 </a>
-                <a
-                  href={`mailto:${config.email}`}
+                <button
+                  onClick={() => scrollTo('contact')}
                   className="flex-1 text-center py-2 text-sm font-semibold text-white rounded-lg"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                  style={{ background: 'linear-gradient(135deg, #4f46e5, #6366f1)' }}
                 >
                   Hire Me
-                </a>
+                </button>
               </div>
             </nav>
           </motion.div>
